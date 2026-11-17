@@ -11,6 +11,13 @@
 
     <main id="hud">
       <div id="clock"></div>
+      <div id="stale" hidden>
+        <div id="stale-say" role="status">the file you opened is out of date</div>
+        <div class="row">
+          <button type="button" id="stale-get">download the new one</button>
+          <button type="button" id="stale-later">not now</button>
+        </div>
+      </div>
       <div id="more">
         <div id="where-when">
           <span id="date"></span>
