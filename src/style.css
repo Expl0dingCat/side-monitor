@@ -1,0 +1,795 @@
+/* The lettering: Darumadrop One (SIL Open Font License), built into the page. */
+@font-face {
+  font-family: 'Darumadrop One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../node_modules/@fontsource/darumadrop-one/files/darumadrop-one-latin-400-normal.woff2') format('woff2');
+}
+
+:root {
+  --ink: 232, 236, 255;
+  --ink-high: 232, 236, 255;
+  --ink-low: 232, 236, 255;
+  --halo: 0, 0, 0;
+  --bg: #010106;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  transition: background 2s linear;
+}
+
+body {
+  font-family: 'Darumadrop One', 'Hiragino Maru Gothic ProN', ui-rounded, system-ui, sans-serif;
+  font-synthesis: none;
+  color: rgb(var(--ink));
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The scene is drawn small and scaled up with hard pixel edges. (It fades out
+   and in again when you lie back to look at the sky, or sit up.) */
+#scene {
+  transition: opacity 0.42s ease, filter 1.2s ease;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+/* Late at night, left alone, the picture dims a little to spare the screen; it wakes at a touch. */
+body.late #scene {
+  filter: brightness(0.78);
+  transition: opacity 0.42s ease, filter 12s ease;
+}
+
+/* The text sits in the sky, top left. Only the time shows; the day, the place
+   and the weather are tucked away until the pointer comes to this corner, and
+   then they arrive one line after another. */
+#hud {
+  position: fixed;
+  z-index: 1;
+  left: clamp(1.5rem, 4vw, 4.5rem);
+  top: clamp(1.5rem, 6vh, 4.5rem);
+  width: fit-content;
+  max-width: min(86vw, 30rem);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  /* No outline and no glow: the letters are simply pale where the picture behind them is dark, and dark where it is bright. */
+  text-shadow: none;
+  transition: color 1.5s linear;
+  /* The small lines all share one size; the temperature alone is larger. */
+  --small: clamp(0.95rem, 1.15vw, 1.2rem);
+}
+
+#more {
+  display: flex;
+  flex-direction: column;
+}
+
+#more > * {
+  opacity: 0;
+  transform: translateY(-0.4rem);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+#hud.open #more > * {
+  opacity: 1;
+  transform: none;
+  transition-duration: 0.7s;
+}
+
+#hud.open #more > :nth-child(2) {
+  transition-delay: 0.09s;
+}
+
+#hud.open #more > :nth-child(3) {
+  transition-delay: 0.18s;
+}
+
+#hud.open #more > :nth-child(4) {
+  transition-delay: 0.27s;
+}
+
+#clock {
+  font-size: clamp(2.4rem, 4.4vw, 4.8rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+#clock small {
+  font-size: 0.32em;
+  letter-spacing: 0.12em;
+  margin-left: 0.4em;
+  color: rgba(var(--ink), 0.9);
+}
+
+/* The day and the place, as one quiet line under the time. */
+#where-when {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.45em;
+  font-size: var(--small);
+  line-height: 1.35;
+  color: rgba(var(--ink), 0.86);
+}
+
+#where-when .sep {
+  color: rgba(var(--ink), 0.5);
+}
+
+/* The place is the one word here that can be touched: a dotted line under it says so. */
+#place {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-shadow: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted rgba(var(--ink), 0.45);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+  transition: color 0.3s ease, text-decoration-color 0.3s ease;
+}
+
+#place:hover,
+#place:focus-visible,
+#hud.asking #place {
+  color: rgb(var(--ink));
+  text-decoration-color: rgba(var(--ink), 0.95);
+  outline: none;
+}
+
+/* The weather: the temperature large, what the sky is doing beside it. */
+#weather-line {
+  margin-top: 0.85rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  font-size: clamp(1.15rem, 1.5vw, 1.55rem);
+  line-height: 1.1;
+}
+
+#weather-line .temp {
+  font-size: 1.75em;
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+}
+
+/* (While there is no reading yet, the line only says so, quietly.) */
+#weather-line.waiting {
+  font-size: var(--small);
+  line-height: 1.35;
+  color: rgba(var(--ink), 0.7);
+}
+
+#hint-line {
+  margin-top: 0.3rem;
+  font-size: var(--small);
+  line-height: 1.35;
+  color: rgba(var(--ink), 0.72);
+}
+
+#hint-line:empty {
+  display: none;
+}
+
+/* Changing the place: a line to write a city on, and two other ways to say where. */
+#place-form {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: var(--small);
+  width: min(100%, 17rem);
+}
+
+#place-form[hidden] {
+  display: none;
+}
+
+#place-form input {
+  font: inherit;
+  font-size: 1.15em;
+  color: inherit;
+  text-shadow: inherit;
+  background: none;
+  border: 0;
+  border-bottom: 1px dotted rgba(var(--ink), 0.55);
+  border-radius: 0;
+  padding: 0.15rem 0 0.3rem;
+  outline: none;
+  caret-color: rgb(var(--ink));
+  transition: border-color 0.3s ease;
+}
+
+#place-form input::placeholder {
+  color: rgba(var(--ink), 0.5);
+}
+
+#place-form input:focus {
+  border-bottom-color: rgba(var(--ink), 0.95);
+}
+
+#place-form .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 1.1em;
+}
+
+#place-form button {
+  font: inherit;
+  font-size: 0.92em;
+  color: rgba(var(--ink), 0.72);
+  text-shadow: inherit;
+  background: none;
+  border: 0;
+  padding: 0.1rem 0;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+#place-form button:hover,
+#place-form button:focus-visible {
+  color: rgb(var(--ink));
+  outline: none;
+}
+
+#place-error {
+  font-size: 0.92em;
+  line-height: 1.3;
+  color: rgba(var(--ink), 0.72);
+}
+
+#place-error:empty {
+  display: none;
+}
+
+#music-form {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+#music-form[hidden] {
+  display: none;
+}
+
+#music-form label {
+  color: rgba(var(--ink), 0.6);
+}
+
+#music-form input {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(var(--ink), 0.35);
+  padding: 0.3rem 0;
+  outline: none;
+}
+
+#music-form input:focus {
+  border-bottom-color: rgba(var(--ink), 0.8);
+}
+
+#music-form .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.2rem;
+}
+
+#music-form button {
+  font: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: rgba(var(--ink), 0.94);
+  background: none;
+  border: 0;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+
+#music-form button:hover,
+#music-form button:focus-visible {
+  color: rgba(var(--ink), 1);
+  text-decoration: underline;
+}
+
+/* The gramophone: the name of the tune hangs in the air above its horn, and
+   the one thing it ever asks is written beside it. */
+#tune,
+#sky-name,
+#lamb-word,
+#word,
+#music-form {
+  /* No outline and no glow (see #hud). */
+  text-shadow: none;
+}
+
+#tune {
+  position: fixed;
+  z-index: 1;
+  /* Centred over the gramophone; a long name folds onto a second line. */
+  width: max-content;
+  max-width: min(44vw, 22rem);
+  transform: translate(-50%, -100%) translateY(0.4rem);
+  font-size: clamp(1rem, 1.4vw, 1.4rem);
+  line-height: 1.25;
+  text-align: center;
+  text-wrap: balance;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+#tune.shown {
+  opacity: 1;
+  transform: translate(-50%, -100%);
+}
+
+/* Its one question is asked in the open sky above it. */
+#music-form {
+  position: fixed;
+  z-index: 1;
+  left: 50%;
+  top: 14vh;
+  transform: translateX(-50%);
+  width: min(84vw, 27rem);
+  margin-top: 0;
+}
+
+#music-link {
+  align-self: flex-start;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: rgba(var(--ink), 1);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#music-link[hidden] {
+  display: none;
+}
+
+#music-note {
+  font-size: 0.85rem;
+  color: rgba(var(--ink), 0.85);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* A line that named the lamb, lifting off the stone and drifting away as you stand back. */
+#name-away {
+  position: fixed;
+  z-index: 4;
+  white-space: pre;
+  pointer-events: none;
+  user-select: none;
+  color: rgb(255, 236, 200);
+  text-shadow: 0 0 0.7em rgba(255, 132, 44, 0.7), 0 0 0.3em rgba(18, 10, 5, 0.75);
+  opacity: 0;
+}
+
+#name-away.going {
+  animation: name-away 2.2s ease-out forwards;
+}
+
+@keyframes name-away {
+  0% {
+    opacity: 1;
+    transform: none;
+    letter-spacing: 0.02em;
+    filter: blur(0);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(2.5rem, -4rem);
+    letter-spacing: 0.55em;
+    filter: blur(3px);
+  }
+}
+
+/* What the lamb says, or what it is called, just above it. */
+#lamb-word {
+  position: fixed;
+  z-index: 1;
+  width: max-content;
+  max-width: min(60vw, 24rem);
+  transform: translate(-50%, -100%) translateY(0.3rem);
+  font-size: clamp(0.95rem, 1.3vw, 1.3rem);
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+#lamb-word.shown {
+  opacity: 1;
+  transform: translate(-50%, -100%);
+}
+
+/* A few passing words, low in the middle of the view (when the sound is turned off or on). */
+#word {
+  position: fixed;
+  z-index: 3;
+  left: 50%;
+  bottom: 9vh;
+  width: max-content;
+  max-width: 80vw;
+  transform: translate(-50%, 0.5rem);
+  font-size: clamp(1rem, 1.4vw, 1.4rem);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+/* On the beach the words sit higher, over the water, where they can be read. */
+body.ashore #word {
+  bottom: 27vh;
+}
+
+#word.shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* The name of a figure just joined up in the stars, hanging under it. */
+#sky-name {
+  position: fixed;
+  z-index: 1;
+  width: max-content;
+  max-width: 70vw;
+  transform: translate(-50%, 0.5rem);
+  font-size: clamp(1rem, 1.4vw, 1.4rem);
+  letter-spacing: 0.06em;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 1.4s ease, transform 1.4s ease;
+}
+
+#sky-name.shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+body.reading #tune,
+body.reading #lamb-word,
+body.reading #sky-name,
+body.reading #music-form {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The notes the stone keeps. No window: the words hang in the air beside the
+   stone, in the colour of its carving. */
+#notes {
+  position: fixed;
+  z-index: 3;
+  left: 40vw;
+  top: 15vh;
+  width: min(52vw, 46rem);
+  max-height: 68vh;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.8rem);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  color: rgb(255, 236, 200);
+  /* No outline: its own glow, and a breath of dark behind the letters to be read by day. */
+  text-shadow: 0 0 0.7em rgba(255, 170, 60, 0.65), 0 0 0.3em rgba(18, 10, 5, 0.75);
+}
+
+#notes.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  /* It rises into view as you finish leaning in. */
+  transition: opacity 0.9s ease 0.45s, transform 1.1s ease 0.45s;
+}
+
+#notes[hidden] {
+  display: none;
+}
+
+/* Only as tall as what is written, so a click anywhere off the words stands you back up. */
+#notes textarea {
+  flex: none;
+  max-height: 64vh;
+  overflow-y: auto;
+  resize: none;
+  border: 0;
+  outline: none;
+  padding: 1.2em 0.2em;
+  background: none;
+  font: inherit;
+  font-size: clamp(1.5rem, 2vw, 2.1rem);
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: inherit;
+  text-shadow: inherit;
+  caret-color: rgb(255, 190, 90);
+  /* Long notes scroll out of sight softly, with no bar. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%);
+}
+
+#notes textarea::-webkit-scrollbar {
+  display: none;
+}
+
+#notes textarea::placeholder {
+  color: rgba(255, 220, 170, 0.6);
+}
+
+#notes textarea::selection {
+  background: rgba(255, 170, 60, 0.35);
+}
+
+#notes-status {
+  font-size: 0.95rem;
+  color: rgba(255, 214, 170, 0.95);
+}
+
+/* A message in a bottle. The words hang in the air just above the bottle on the
+   beach, in the same script as the stone's notes. They grow out of the bottle
+   when it is opened, and go back into it when you stand back. (Where they hang
+   is worked out from where the bottle is: see bottles.ts.) */
+#bottle {
+  position: fixed;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.3);
+  transition: opacity 0.6s ease, transform 0.75s ease;
+  color: rgb(255, 236, 200);
+  text-shadow: 0 0 0.7em rgba(255, 170, 60, 0.65), 0 0 0.3em rgba(18, 10, 5, 0.75);
+}
+
+#bottle.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  transition: opacity 0.8s ease 0.1s, transform 0.9s ease;
+}
+
+#bottle[hidden] {
+  display: none;
+}
+
+#bottle textarea {
+  flex: none;
+  overflow-y: auto;
+  resize: none;
+  border: 0;
+  outline: none;
+  padding: 1.2em 0.2em 0.5em;
+  background: none;
+  font: inherit;
+  font-size: clamp(1.5rem, 2vw, 2.1rem);
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: inherit;
+  text-shadow: inherit;
+  caret-color: rgb(255, 190, 90);
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 95%, transparent 100%);
+}
+
+#bottle textarea::-webkit-scrollbar {
+  display: none;
+}
+
+#bottle textarea::placeholder {
+  color: rgba(255, 220, 170, 0.6);
+}
+
+#bottle textarea::selection {
+  background: rgba(255, 170, 60, 0.35);
+}
+
+/* A message that has come back is read, not written. */
+#bottle.reading textarea {
+  caret-color: transparent;
+  cursor: default;
+}
+
+/* Under the words, quietly: when it will come back, or the day it was sent. */
+#bottle-line {
+  padding: 0 0.2em;
+  font-size: clamp(1rem, 1.25vw, 1.3rem);
+  letter-spacing: 0.04em;
+  color: rgba(255, 214, 170, 0.85);
+}
+
+/* While a bottle is open the beach falls quiet round it, as the meadow does round the stone. */
+#bottle-hush {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  background: radial-gradient(ellipse 36% 42% at var(--at-x, 30%) var(--at-y, 90%), rgba(4, 8, 16, 0.08) 0%, rgba(4, 8, 16, 0.13) 14%, rgba(4, 8, 16, 0.31) 48%, rgba(4, 8, 16, 0.42) 100%);
+}
+
+body.bottling #bottle-hush {
+  opacity: 1;
+}
+
+body.bottling #hud {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* While you are at the stone the rest of the world falls quiet round it. */
+#hush {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  background:
+    radial-gradient(ellipse 46% 62% at 23% 63%, rgba(4, 8, 16, 0) 0%, rgba(4, 8, 16, 0.2) 60%, rgba(4, 8, 16, 0.4) 100%),
+    linear-gradient(to right, rgba(4, 8, 16, 0) 28%, rgba(4, 8, 16, 0.28) 62%);
+}
+
+body.reading #hush {
+  opacity: 1;
+}
+
+#hud {
+  transition: opacity 0.6s ease;
+  /* The words in the sky do not get in the way of the sky: clicks pass through
+     them, except on the place name and its little form. */
+  pointer-events: none;
+}
+
+#hud.open button,
+#hud.open form {
+  pointer-events: auto;
+}
+
+body.reading #hud,
+body.gazing #hud,
+body.gazing #tune {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* In a tall window the stone sits low and the writing goes above it. */
+@media (orientation: portrait) {
+  #notes {
+    left: 8vw;
+    top: 7vh;
+    width: 84vw;
+    max-height: 46vh;
+  }
+
+  #notes textarea {
+    max-height: 42vh;
+  }
+
+  #hush {
+    background:
+      radial-gradient(ellipse 70% 40% at 50% 74%, rgba(4, 8, 16, 0) 0%, rgba(4, 8, 16, 0.28) 60%, rgba(4, 8, 16, 0.5) 100%),
+      linear-gradient(to top, rgba(4, 8, 16, 0) 40%, rgba(4, 8, 16, 0.32) 75%);
+  }
+}
+
+/* Indoors the words in the corner are read against the wall of the room, not the sky: pale ink, whatever the hour. */
+body.indoors {
+  --ink: 236, 226, 204;
+  --ink-high: 236, 226, 204;
+  --ink-low: 236, 226, 204;
+}
+
+/* Words low in the view lie on the land or the water, not on the sky: their ink is judged from what is behind
+   them there (and the guide's, from whichever of the two each one hangs over). */
+#word,
+#lamb-word,
+#music-form,
+#tune,
+#task-word,
+#guide .says {
+  --ink: var(--ink-low);
+  /* (Said outright: a colour handed down from the page was worked out with the page's ink, the sky's, and
+     would ignore the ink chosen here. Each of these labels is then given its own ink by the page, judged
+     from what lies behind that very label.) */
+  color: rgb(var(--ink));
+  /* (Opacity and place are named again here: a bare "transition: color" would take the place of each
+     label's own fade, and they would blink on and off.) */
+  transition: color 0.5s linear, opacity 0.6s ease, transform 0.6s ease;
+}
+#guide .says.high {
+  --ink: var(--ink-high);
+}
+
+/* ---- nothing written here ever simply changes ----------------------------------------
+   Words about to be replaced fade out first (see words.ts), and fade back in as the new ones. */
+.turning {
+  opacity: 0 !important;
+  transition: opacity 0.28s ease !important;
+}
+
+#clock,
+#date {
+  transition: opacity 0.6s ease, color 1.5s linear;
+}
+
+#place {
+  transition: color 0.3s ease, text-decoration-color 0.3s ease, opacity 0.6s ease;
+}
+
+/* The little forms (the place, the gramophone's question) come and go the same way: eased in and
+   out, never switched. Put away, they are still laid out but take no room and cannot be touched. */
+#place-form {
+  max-height: 14rem;
+  overflow: hidden;
+  transition: opacity 0.45s ease, max-height 0.5s ease, margin-top 0.5s ease, visibility 0s;
+}
+
+#place-form[hidden] {
+  display: flex;
+  visibility: hidden;
+  opacity: 0 !important;
+  max-height: 0;
+  margin-top: 0;
+  pointer-events: none !important;
+  transition: opacity 0.35s ease, max-height 0.5s ease, margin-top 0.5s ease, visibility 0s linear 0.5s;
+}
+
+#music-form {
+  transition: opacity 0.5s ease, transform 0.5s ease, visibility 0s;
+}
+
+#music-form[hidden] {
+  display: flex;
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(-50%, -0.6rem);
+  pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.5s ease, visibility 0s linear 0.5s;
+}
+
+#place-error,
+#music-note,
+#notes-status {
+  transition: opacity 0.4s ease;
+}

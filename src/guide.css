@@ -1,0 +1,62 @@
+/* The guide: while H is held, a few quiet words hang over each thing that can
+   be touched, saying what it is for. No boxes, no lines; they fade in and out. */
+#guide {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  color: rgb(var(--ink));
+  text-shadow: none;
+}
+
+#guide.shown {
+  opacity: 1;
+}
+
+#guide .says {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: max-content;
+  max-width: min(42vw, 15rem);
+  text-align: center;
+  font-size: clamp(0.95rem, 1.2vw, 1.2rem);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+#guide .says small {
+  display: block;
+  margin-top: 0.1em;
+  font-size: 0.8em;
+  line-height: 1.3;
+  color: rgba(var(--ink), 0.8);
+}
+
+/* The keys, in one line along the bottom. */
+#guide .says.keys {
+  max-width: 92vw;
+  font-size: clamp(0.85rem, 1.05vw, 1.05rem);
+  color: rgba(var(--ink), 0.85);
+}
+
+/* They do not travel. Each is put where it belongs while it cannot be seen, and then fades in there; after that
+   only its ink changes gradually, never its place. (Said of the div outright, so that no rule shared with the
+   other labels can give it a moving transition.) */
+#guide div.says {
+  opacity: 0;
+  transition: color 0.5s linear;
+}
+#guide div.says.in {
+  opacity: 1;
+  transition: color 0.5s linear, opacity 0.45s ease;
+}
+
+/* Words that belong under the corner's own text are ranged left with it. */
+#guide div.says.corner {
+  text-align: left;
+  max-width: min(60vw, 20rem);
+}

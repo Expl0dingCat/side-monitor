@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nightpond</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-hidden="true"></canvas>
+
+    <main id="hud">
+      <div id="clock"></div>
+      <div id="more">
+        <div id="where-when">
+          <span id="date"></span>
+          <span class="sep" aria-hidden="true">·</span>
+          <button id="place" type="button" title="change the place"></button>
+        </div>
+        <div id="weather-line"></div>
+        <div id="hint-line"></div>
+
+        <form id="place-form" hidden>
+          <input id="place-input" type="text" autocomplete="off" spellcheck="false" aria-label="your city" placeholder="a city, then enter" />
+          <div class="row">
+            <button type="button" id="place-auto">find my city</button>
+            <button type="button" id="place-geo">use precise location</button>
+          </div>
+          <div id="place-error" role="status"></div>
+        </form>
+      </div>
+    </main>
+
+    <div id="tune" role="status"></div>
+    <div id="sky-name" role="status"></div>
+    <div id="lamb-word" role="status"></div>
+    <div id="name-away" aria-hidden="true"></div>
+    <div id="word" role="status"></div>
+    <form id="music-form" hidden>
+      <label for="music-id" id="music-ask"></label>
+      <a id="music-link" target="_blank" rel="noopener noreferrer" hidden>open spotify's sign-in</a>
+      <input id="music-id" type="text" autocomplete="off" spellcheck="false" placeholder="spotify client id" />
+      <div class="row">
+        <button type="submit" id="music-go">connect</button>
+        <button type="button" id="music-cancel">not now</button>
+        <button type="button" id="music-forget" hidden>forget spotify</button>
+      </div>
+      <div id="music-note"></div>
+    </form>
+
+    <div id="hush" aria-hidden="true"></div>
+
+    <section id="notes" hidden aria-label="Notes kept by the stone">
+      <textarea id="notes-text" spellcheck="false" placeholder="write, and the stone will keep it…"></textarea>
+      <div id="notes-status" role="status"></div>
+    </section>
+
+    <div id="bottle-hush" aria-hidden="true"></div>
+    <section id="bottle" hidden aria-label="A message in a bottle">
+      <textarea id="bottle-text" spellcheck="false" placeholder="write to yourself, and the sea will bring it back…"></textarea>
+      <div id="bottle-line" role="status"></div>
+    </section>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
