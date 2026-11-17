@@ -52,7 +52,7 @@ import { earthShadowAt, earthShadowTried } from './sky/eclipses';
 import { fetchHaze } from './weather/airQuality';
 import { createCloudRound } from './weather/cloudRound';
 import { fetchCoverBy } from './weather/openMeteo';
-import { BUILD, updateOnLaunch, updateStarted } from './update';
+import { offerNewFile, updateOnLaunch, updateStarted, VERSION } from './update';
 
 // UPDATE: before anything is begun, the page becomes the newest version of itself, if there is a newer
 // one (see update.ts). Nearly always there is not, and this is over in a moment.
@@ -1687,8 +1687,8 @@ if (!place || place.auto) void detectPlace(false);
 // nightpond.step(33) draws one frame as if that many milliseconds had passed (for testing).
 Object.assign(window, {
   nightpond: {
-    /** UPDATE: when this page was built (a later number is a newer page). */
-    build: BUILD,
+    /** UPDATE: this page's version. */
+    version: VERSION,
     set: debug.set,
     live: debug.live,
     weather,
@@ -1769,5 +1769,7 @@ Object.assign(window, {
   },
 });
 
-// UPDATE: the page has got this far, so it starts properly (see update.ts).
+// UPDATE: the page has got this far, so it starts properly (see update.ts). And if the file it was
+// opened from is out of date, it says so, with a way to have the new one.
 updateStarted();
+offerNewFile();

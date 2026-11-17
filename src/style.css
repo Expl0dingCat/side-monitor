@@ -793,3 +793,62 @@ body.indoors {
 #notes-status {
   transition: opacity 0.4s ease;
 }
+
+/* UPDATE: the one thing the page says for itself, under the time, when the file it was opened from is
+   older than the newest build (see update.ts): that the file is out of date, and a way to have the new
+   one. It comes and goes as the other small forms do: eased, never switched. */
+#stale {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: var(--small);
+  line-height: 1.35;
+  max-height: 7rem;
+  overflow: hidden;
+  transition: opacity 0.6s ease, max-height 0.6s ease, margin-top 0.6s ease, visibility 0s;
+}
+
+#stale[hidden] {
+  display: flex;
+  visibility: hidden;
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease, max-height 0.6s ease, margin-top 0.6s ease, visibility 0s linear 0.6s;
+}
+
+#stale-say {
+  color: rgba(var(--ink), 0.85);
+  transition: opacity 0.4s ease;
+}
+
+#stale .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.2rem;
+}
+
+#stale button {
+  font: inherit;
+  letter-spacing: 0.06em;
+  color: rgba(var(--ink), 0.95);
+  background: none;
+  border: 0;
+  padding: 0.15rem 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--ink), 0.4);
+  text-underline-offset: 0.2em;
+}
+
+#stale button:hover,
+#stale button:focus-visible {
+  color: rgba(var(--ink), 1);
+  text-decoration-color: rgba(var(--ink), 0.9);
+}
+
+#stale button[hidden] {
+  display: none;
+}
