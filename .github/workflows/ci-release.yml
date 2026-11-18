@@ -1,0 +1,127 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Stable version to build and release (for example, 0.1.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate release request
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          node --input-type=module -e 'if (process.env.GITHUB_REF !== "refs/heads/main" || !/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(process.env.VERSION)) throw new Error("Run on main with a stable version such as 0.1.1")'
+      - run: npm ci
+      - name: Set release version
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          VERSION: ${{ inputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version --ignore-scripts
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nightpond-build
+          if-no-files-found: error
+          path: |
+            nightpond.html
+            package.json
+            package-lock.json
+
+  release:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: nightpond-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nightpond-build
+      - name: Commit build, tag, and publish stable release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const crypto = require('node:crypto');
+            const repo = context.repo;
+            const version = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
+            const tag = 'v' + version;
+            const files = ['package.json', 'package-lock.json', 'nightpond.html'];
+            const html = fs.readFileSync('nightpond.html');
+            if (!html.toString().includes('<meta name="nightpond-version" content="' + version + '"')) {
+              throw new Error('Compiled HTML version does not match package.json');
+            }
+            const { data: base } = await github.rest.git.getCommit({ ...repo, commit_sha: context.sha });
+            const { data: tree } = await github.rest.git.createTree({
+              ...repo, base_tree: base.tree.sha,
+              tree: files.map(path => ({ path, mode: '100644', type: 'blob', content: fs.readFileSync(path, 'utf8') }))
+            });
+            const { data: head } = await github.rest.git.getRef({ ...repo, ref: 'heads/main' });
+            let sha = head.object.sha;
+            if (sha !== context.sha) {
+              const { data: current } = await github.rest.git.getCommit({ ...repo, commit_sha: sha });
+              if (current.tree.sha !== tree.sha || current.parents[0]?.sha !== context.sha) {
+                throw new Error('main changed during this build. Run again from current main.');
+              }
+            } else if (tree.sha !== base.tree.sha) {
+              const { data: commit } = await github.rest.git.createCommit({
+                ...repo, message: 'Release ' + tag, tree: tree.sha, parents: [context.sha]
+              });
+              sha = commit.sha;
+            }
+            const find = async operation => {
+              try { return (await operation()).data; }
+              catch (error) { if (error.status !== 404) throw error; return null; }
+            };
+            const existingTag = await find(() => github.rest.git.getRef({ ...repo, ref: 'tags/' + tag }));
+            if (existingTag && existingTag.object.sha !== sha) throw new Error(tag + ' already points to another commit');
+            if (head.object.sha !== sha) await github.rest.git.updateRef({ ...repo, ref: 'heads/main', sha, force: false });
+            if (!existingTag) await github.rest.git.createRef({ ...repo, ref: 'refs/tags/' + tag, sha });
+            let release = await find(() => github.rest.repos.getReleaseByTag({ ...repo, tag }));
+            if (!release) {
+              release = (await github.rest.repos.createRelease({
+                ...repo, tag_name: tag, target_commitish: sha, name: tag,
+                draft: true, prerelease: false, generate_release_notes: true
+              })).data;
+            }
+            const digest = 'sha256:' + crypto.createHash('sha256').update(html).digest('hex');
+            const asset = release.assets.find(item => item.name === 'nightpond.html');
+            if (asset && asset.digest !== digest) throw new Error('Existing release asset differs from this build');
+            if (!asset) {
+              if (!release.draft) throw new Error('Published release has no matching asset');
+              await github.rest.repos.uploadReleaseAsset({
+                ...repo, release_id: release.id, name: 'nightpond.html', data: html,
+                headers: { 'content-type': 'text/html', 'content-length': html.length }
+              });
+            }
+            if (release.draft) {
+              release = (await github.rest.repos.updateRelease({
+                ...repo, release_id: release.id, draft: false, prerelease: false, make_latest: 'true'
+              })).data;
+            }
+            await core.summary.addLink('Published ' + tag, release.html_url).write();
